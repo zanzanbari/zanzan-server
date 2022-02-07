@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const hpp = require("hpp");
 const helmet = require("helmet");
-const indexRouter = require("./router/indexRouter");
+const indexRouter = require("./router");
 const { sequelize } = require('./database/models');
 
 // initializing
@@ -16,7 +16,6 @@ const app = express();
 const logger = morgan('dev');
 
 /**DB 관련 */
-    
 // 시퀄라이즈 연결
 sequelize.authenticate()
     .then(async () => {
