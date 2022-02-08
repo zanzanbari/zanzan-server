@@ -107,5 +107,32 @@ module.exports = {
             // 에러6: DB에러
             return -6;
         }
+    },
+/**
+ *  @로그아웃
+ *  @route POST /auth/logout
+ *  @access private
+ */
+    logout: async (userDTO) => {
+        const { idFirebase } = userDTO;
+
+        try {
+            const logoutUser = await User.update({
+                refreshtoken: null 
+            }, { 
+                where: { idFirebase } 
+            });
+
+            let user = {
+                nickname: logoutUser.nickname,
+                refreshtoken: logoutUser.refreshtoken,
+            };
+
+            return user;
+        } catch (error) {
+            console.log(error);
+            // 에러1: DB에러
+            return -1;
+        }
     }
 }

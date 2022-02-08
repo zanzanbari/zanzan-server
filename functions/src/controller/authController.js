@@ -18,9 +18,9 @@ module.exports = {
             // 에러5: 파이어베이스 오류
             else if (data === -5) return res.status(400).send(util.fail(400,'파이어베이스 오류'));
             // 에러6: DB에러
-            else if (data === -6) return res.status(400).send(util.fail(400,'데이터베이스 오류'));
+            else if (data === -6) return res.status(400).send(util.fail(600,'데이터베이스 오류'));
             // 회원가입 성공
-            else return res.status(200).send(util.success(200, '회원가입 성공', data));
+            else return res.status(200).send(util.success(200, '회원가입이 완료되었습니다.', data));
         } catch (error) {
             return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
@@ -42,12 +42,26 @@ module.exports = {
             // 에러5: 파이어베이스 오류
             else if (data === -5) return res.status(400).send(util.fail(400,'파이어베이스 오류'));
             // 에러5: DB 오류
-            else if (data === -6) return res.status(400).send(util.fail(400,'데이터베이스 오류'));
+            else if (data === -6) return res.status(400).send(util.fail(600,'데이터베이스 오류'));
             // 로그인 성공
-            else return res.status(200).send(util.success(200, '로그인 성공', data));
+            else return res.status(200).send(util.success(200, '로그인 되었습니다.', data));
         } catch (error) {
             return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
     },
+
+    logout: async (req, res) => {
+        const userDTO = req.user;
+
+        try {
+            const data = await authService.logout(userDTO);
+            // 에러1: DB오류
+            if (data === -1) return res.send(util.fail(600, '데이터베이스 오류'));
+            // 로그아웃 성공
+            else return res.send(util.success(200, '로그아웃 되었습니다.', data));
+        } catch (error) {
+            return res.send(util.fail(500, '서버 내 오류'));
+        }
+    }
 
 }
