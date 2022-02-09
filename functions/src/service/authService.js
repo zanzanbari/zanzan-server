@@ -2,7 +2,8 @@ const admin = require('firebase-admin');
 const { signInWithEmailAndPassword } = require('@firebase/auth');
 const { firebaseAuth } = require('../config/firebaseClient');
 const User = require('../database/models/user');
-const jwtHandler = require('../lib/jwtHandler');
+const jwtHandler = require('../module/jwtHandler');
+const { emailValidator } = require('../module/validator');
 
 module.exports = {
 /**
@@ -14,6 +15,8 @@ module.exports = {
         const { email, nickname , password } = userDTO;
         // 에러1: 필수 입력값 없음 
         if (!email || !nickname || !password) return -1;
+        // 추가 에러: 이메일 형식 오류
+        if ( !emailValidator(email) ) return -7;
 
         try {
             // firebase에 유저 생성

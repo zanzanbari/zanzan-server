@@ -1,5 +1,5 @@
 const authService = require('../service/authService');
-const util = require('../lib/util');
+const util = require('../module/util');
 
 module.exports = {
     join: async (req, res) => {
@@ -19,9 +19,12 @@ module.exports = {
             else if (data === -5) return res.status(400).send(util.fail(400,'파이어베이스 오류'));
             // 에러6: DB에러
             else if (data === -6) return res.status(400).send(util.fail(600,'데이터베이스 오류'));
+            // 추가 에러: 이메일 형식 오류
+            else if (data === -7) return res.status(400).send(util.fail(400,'이메일 형식이 올바르지 않습니다.'));
             // 회원가입 성공
             else return res.status(200).send(util.success(200, '회원가입이 완료되었습니다.', data));
         } catch (error) {
+            console.log(error);
             return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
     },
@@ -46,6 +49,7 @@ module.exports = {
             // 로그인 성공
             else return res.status(200).send(util.success(200, '로그인 되었습니다.', data));
         } catch (error) {
+            console.log(error);
             return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
     },
@@ -60,6 +64,7 @@ module.exports = {
             // 로그아웃 성공
             else return res.send(util.success(200, '로그아웃 되었습니다.', data));
         } catch (error) {
+            console.log(error);
             return res.send(util.fail(500, '서버 내 오류'));
         }
     }
