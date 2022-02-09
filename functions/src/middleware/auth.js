@@ -8,9 +8,10 @@ const TOKEN_INVALID = -2;
 const authUtil = {
     checkUserByToken: async (req, res, next) => {
         const { accesstoken, refreshtoken } = req.headers;
+
         if (!accesstoken) return res.send(util.fail(400, '토큰이 없습니다.'));
 
-        try {
+        try { // FIXME: 리프레시 토큰 없으면 에러나네;;;; 분기 처리 해줘야 할듯!!
             const accesstokenDecode = jwtHandler.verifyToken(accesstoken);
             const refreshtokenDecode = jwtHandler.verifyToken(refreshtoken);
 
