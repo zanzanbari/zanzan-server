@@ -1,5 +1,5 @@
 const authService = require('../service/authService');
-const util = require('../lib/util');
+const util = require('../module/util');
 
 module.exports = {
     join: async (req, res) => {
@@ -56,11 +56,11 @@ module.exports = {
         try {
             const data = await authService.logout(userDTO);
             // 에러1: DB오류
-            if (data === -1) return res.send(util.fail(600, '데이터베이스 오류'));
+            if (data === -1) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
             // 로그아웃 성공
-            else return res.send(util.success(200, '로그아웃 되었습니다.', data));
+            else return res.status(200).send(util.success(200, '로그아웃 되었습니다.', data));
         } catch (error) {
-            return res.send(util.fail(500, '서버 내 오류'));
+            return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
     }
 

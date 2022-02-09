@@ -2,7 +2,10 @@ const admin = require('firebase-admin');
 const { signInWithEmailAndPassword } = require('@firebase/auth');
 const { firebaseAuth } = require('../config/firebaseClient');
 const User = require('../database/models/user');
-const jwtHandler = require('../lib/jwtHandler');
+const jwtHandler = require('../module/jwtHandler');
+const UserService = require('../module/user');
+
+const UserInstance = new UserService(User);
 
 module.exports = {
 /**
@@ -14,6 +17,7 @@ module.exports = {
         const { email, nickname , password } = userDTO;
         // 에러1: 필수 입력값 없음 
         if (!email || !nickname || !password) return -1;
+        // TODO: 이메일 형식 오류 코드 추가하기
 
         try {
             // firebase에 유저 생성
@@ -39,12 +43,7 @@ module.exports = {
 
             const idFirebase = userFirebase.uid;
             // 회원가입 성공 시 db에 유저 생성
-            const newUser = await User.create({
-                email,
-                idFirebase,
-                nickname
-            });
-
+            const newUser = await UserInstance.createUser(email, idFirebase, nickname);
             return newUser;
         } catch (error) {
             console.log(error);
@@ -82,17 +81,13 @@ module.exports = {
             }
             // 해당 user의 idFirebase로 유저 정보 가져오기
             const idFirebase = userFirebase.user.uid;
-            const isUser = await User.findOne({ where: { idFirebase }});
+            const isUser = await UserInstance.findOneUser(idFirebase);
 
             if (isUser) {
                 // 토큰 발급 
                 const { accesstoken, refreshtoken } = jwtHandler.issueToken(isUser);
                 // refreshtoken 유저 db에 저장
-                await User.update({
-                    refreshtoken: refreshtoken,
-                }, {
-                    where: { idFirebase },
-                });
+                await UserInstance.updateToken(refreshtoken, idFirebase);
 
                 let user = {
                     nickname: isUser.nickname,
@@ -117,11 +112,7 @@ module.exports = {
         const { idFirebase } = userDTO;
 
         try {
-            const logoutUser = await User.update({
-                refreshtoken: null 
-            }, { 
-                where: { idFirebase } 
-            });
+            const logoutUser = await UserInstance.updateToken(null, idFirebase);
 
             let user = {
                 nickname: logoutUser.nickname,
