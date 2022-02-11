@@ -5,7 +5,7 @@ const TOKEN_INVALID = -2;
 
 module.exports = {
     // 토큰 발급 함수
-    issueToken: (user) => {
+    issueAccessToken: (user) => {
         const payload = {
             id: user.id,
             email: user.email,
@@ -15,16 +15,23 @@ module.exports = {
 
         const result = {
             accesstoken: jwt.sign(payload, secreteKey, {
-                algorithm: 'HS256',
-                expiresIn: '14d',
-                issuer: 'chanwoo',
-            }),
-            refreshtoken: jwt.sign({}, secreteKey, {
-                algorithm: 'HS256',
-                expiresIn: '30d',
-                issuer: 'chanwoo',
-            }),
+                algorithm: process.env.JWT_ALGORITHM,
+                expiresIn: process.env.JWT_AC_EXPIRES,
+                issuer: process.env.JWT_ISSUER,
+            })
         };
+
+        return result;
+    },
+
+    issueRefreshToken: () => {
+        const result = {
+            refreshtoken: jwt.sign({}, secreteKey, {
+                algorithm: process.env.JWT_ALGORITHM,
+                expiresIn: process.env.JWT_RF_EXPIRES,
+                issuer: process.env.JWT_ISSUER,
+            }),
+        }
 
         return result;
     },

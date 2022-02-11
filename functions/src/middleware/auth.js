@@ -21,7 +21,7 @@ const authUtil = {
                 } else {
                     const user = await User.findOne({ where: { refreshtoken } });
                     // accesstoken 재발급
-                    const { accesstoken: newAccesstoken } = jwtHandler.issueToken(user);
+                    const { accesstoken: newAccesstoken } = jwtHandler.issueAccessToken(user);
                     // 클라에 넘겨줄 엑세스 토큰
                     res.cookie('accesstoken', newAccesstoken);
                     req.cookies.accesstoken = newAccesstoken;
@@ -31,7 +31,7 @@ const authUtil = {
             } else if (refreshtokenDecode === TOKEN_EXPIRED || refreshtokenDecode === TOKEN_INVALID) {
                 const idFirebase = accesstokenDecode.idFirebase;
                 const user = await User.findOne({ where: { idFirebase } });
-                const { refreshtoken: newRefreshtoken } = jwtHandler.issueToken(user);
+                const { refreshtoken: newRefreshtoken } = jwtHandler.issueRefreshToken();
                 // 클라에 넘겨줄 리프레쉬 토큰
                 res.cookie('refreshtoken', newRefreshtoken);
                 req.cookies.refreshtoken = newRefreshtoken;

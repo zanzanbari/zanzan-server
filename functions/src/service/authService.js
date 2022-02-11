@@ -89,7 +89,8 @@ module.exports = {
 
             if (isUser) {
                 // 토큰 발급 
-                const { accesstoken, refreshtoken } = jwtHandler.issueToken(isUser);
+                const { accesstoken } = jwtHandler.issueAccessToken(isUser);
+                const { refreshtoken } = jwtHandler.issueRefreshToken();
                 // refreshtoken 유저 db에 저장
                 await User.update({
                     refreshtoken: refreshtoken,
