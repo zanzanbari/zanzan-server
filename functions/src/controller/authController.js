@@ -60,13 +60,32 @@ module.exports = {
         try {
             const data = await authService.logout(userDTO);
             // 에러1: DB오류
-            if (data === -1) return res.send(util.fail(600, '데이터베이스 오류'));
+            if (data === -1) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
             // 로그아웃 성공
-            else return res.send(util.success(200, '로그아웃 되었습니다.', data));
+            else return res.status(200).send(util.success(200, '로그아웃 되었습니다.', data));
         } catch (error) {
             console.log(error);
             return res.send(util.fail(500, '서버 내 오류'));
         }
-    }
+    },
+
+    reissueToken: async (req, res) => {
+        const token = req.headers;
+
+        try {
+            const data = await authService.reissueToken(token);
+            // 에러1: 필요한 값 없음
+            if (data === -1) return res.status(400).send(util.fail(400, '토큰이 없습니다.'));
+            // 에러2: 토큰 모두 만료
+            else if (data === -2) return res.status(401).send(util.fail(401, '다시 로그인 하십시오.'));
+            // 에러3: DB에러
+            else if (data === -3) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
+            // 토큰 재발급
+            else return res.status(200).send(util.success(200, '토큰이 재발급 되었습니다.', data));
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send(util.fail(500, '서버 내 오류'));
+        }
+    },
 
 }

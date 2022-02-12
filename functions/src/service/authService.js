@@ -1,9 +1,11 @@
 const admin = require('firebase-admin');
-const { signInWithEmailAndPassword } = require('@firebase/auth');
+const { signInWithEmailAndPassword, signOut } = require('@firebase/auth');
 const { firebaseAuth } = require('../config/firebaseClient');
 const User = require('../database/models/user');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator } = require('../module/validator');
+const TOKEN_EXPIRED = -3;
+const TOKEN_INVALID = -2;
 
 module.exports = {
 /**
@@ -118,25 +120,77 @@ module.exports = {
  *  @access private
  */
     logout: async (userDTO) => {
-        const { idFirebase } = userDTO;
+        const { nickname, idFirebase } = userDTO;
 
         try {
-            const logoutUser = await User.update({
+            await User.update({
                 refreshtoken: null 
             }, { 
                 where: { idFirebase } 
             });
 
-            let user = {
-                nickname: logoutUser.nickname,
-                refreshtoken: logoutUser.refreshtoken,
+            let logoutUser = {
+                nickname,
             };
-
-            return user;
+            return logoutUser;
         } catch (error) {
             console.log(error);
             // 에러1: DB에러
             return -1;
         }
-    }
+    },
+
+    reissueToken: async (token) => {
+        const { accesstoken, refreshtoken } = token;
+        // 에러1: 필요한 값 없음
+        if (!accesstoken || !refreshtoken) return -1;
+
+        try {
+            const refreshtokenDecode = jwtHandler.verifyToken(refreshtoken);
+            // 리프레시 토큰도 만료 시 재로그인 요청
+            if (refreshtokenDecode === TOKEN_EXPIRED || refreshtokenDecode === TOKEN_INVALID) return -2;
+
+            const user = await User.findOne({ where : { refreshtoken } });
+            const { accesstoken } = jwtHandler.issueAccessToken(user);
+            return accesstoken;
+        } catch (error) {
+            console.log(error);
+            // 에러3: DB에러
+            return -3;
+        }
+    },
+
+    /**             accesstokenDecode = jwtHandler.verifyToken(accesstoken);
+
+            if (accesstokenDecode === TOKEN_EXPIRED || accesstokenDecode === TOKEN_INVALID) {
+                refreshtokenDecode = jwtHandler.verifyToken(refreshtoken);
+
+                if (refreshtokenDecode === TOKEN_EXPIRED || refreshtokenDecode === TOKEN_INVALID) {
+                    return res.send(util.fail(401, '토큰이 만료되었습니다. 다시 로그인 하세요.'));
+                } else {
+                    const user = await User.findOne({ where: { refreshtoken } });
+                    // accesstoken 재발급
+                    const { accesstoken: newAccesstoken } = jwtHandler.issueAccessToken(user);
+                    // 클라에 넘겨줄 엑세스 토큰
+                    res.cookie('accesstoken', newAccesstoken);
+                    req.cookies.accesstoken = newAccesstoken;
+                    req.user = user;
+                    next();
+                }
+                
+            } else if (refreshtokenDecode === TOKEN_EXPIRED || refreshtokenDecode === TOKEN_INVALID) {
+                const idFirebase = accesstokenDecode.idFirebase;
+                const user = await User.findOne({ where: { idFirebase } });
+                const { refreshtoken: newRefreshtoken } = jwtHandler.issueRefreshToken();
+                // 클라에 넘겨줄 리프레쉬 토큰
+                res.cookie('refreshtoken', newRefreshtoken);
+                req.cookies.refreshtoken = newRefreshtoken;
+                req.user = user;
+                next();
+            } else {
+                const idFirebase = accesstokenDecode.idFirebase;
+                const user = await User.findOne({ where: { idFirebase } });
+                req.user = user;
+                next();
+            } */
 }
