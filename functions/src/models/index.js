@@ -1,6 +1,6 @@
 // module.exports = db;
 //const env = process.env.NODE_ENV || 'development';
-const dbConfig = require('../../config/dbConfig'); // 이러면 dbConfig는 development가 됨
+const dbConfig = require('../config/dbConfig'); // 이러면 dbConfig는 development가 됨
 const Sequelize = require('sequelize');
 const User = require('./user');
 
