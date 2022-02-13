@@ -17,15 +17,6 @@ module.exports = class User extends Sequelize.Model {
             password: {
                 type: Sequelize.STRING(255),
                 allowNull: false,
-                // set: async function (pwd) {
-                //     try {
-                //         const salt = await bcrypt.genSalt(10);
-                //         const hashedPassword = await bcrypt.hash(pwd, salt);
-                //         this.setDataValue('password', hashedPassword);
-                //     } catch (error) {
-                //         console.log('❌ HASHING ERROR');
-                //     }
-                // },
             },
             nickname: {
                 type: Sequelize.STRING(30),
