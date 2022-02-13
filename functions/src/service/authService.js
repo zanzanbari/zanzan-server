@@ -1,4 +1,4 @@
-const User = require('../database/models/user');
+const User = require('../models/user');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwtHandler = require('../module/jwtHandler');
