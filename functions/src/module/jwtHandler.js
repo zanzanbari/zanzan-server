@@ -10,7 +10,6 @@ module.exports = {
             id: user.id,
             email: user.email,
             nickname: user.nickname,
-            idFirebase: user.idFirebase,
         };
 
         const result = {
