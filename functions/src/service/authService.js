@@ -33,8 +33,7 @@ module.exports = {
                 password, //: hashedPassword,
                 nickname,
             });
-            console.log('🐯🐯🐯',newUser);
-            return true;
+            if (newUser) return true;
         } catch (error) {
             console.log(error);
             // 에러5: DB에러
