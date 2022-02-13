@@ -4,6 +4,7 @@ const { firebaseAuth } = require('../config/firebaseClient');
 const User = require('../database/models/user');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator } = require('../module/validator');
+const { getNaverTokenByCodeAPI, NaverAuthAPI } = require('../module/api');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -129,7 +130,7 @@ module.exports = {
                 where: { idFirebase } 
             });
 
-            let logoutUser = {
+            const logoutUser = {
                 nickname,
             };
             return logoutUser;
@@ -158,5 +159,63 @@ module.exports = {
             // 에러3: DB에러
             return -3;
         }
+    },
+
+    socialLogin: async (userDTO) => {
+        const { code, social, token } = userDTO;
+        // 에러1: 필수 입력 값 없음
+        if (!code || !social) return -1;
+
+        try {
+            let user;
+            switch (social) {
+                case 'naver':
+                    const naverAccessToken = await getNaverTokenByCodeAPI(code);
+                    user = await NaverAuthAPI(naverAccessToken);
+                    break;
+                case 'kakao':
+                    break;
+                case 'apple':
+                    break;
+            }
+            // 에러2: 인증되지 않은 유저
+            if (!user) return -2;
+            
+            const email = user.email;
+            const nickname = user.nickname;
+            const existUser = await User.findOne({ where: { email } });
+            if (!existUser) {
+                const { refreshtoken } = jwtHandler.issueRefreshToken();
+                const newUser = await User.create({
+                    email,
+                    nickname,
+                    refreshtoken,
+                    social,
+                });
+                const { accesstoken } = jwtHandler.issueAccessToken(newUser);
+                newUser.accesstoken = accesstoken;
+                return newUser;
+            }
+
+            const { accesstoken } = jwtHandler.issueAccessToken(existUser);
+            const { refreshtoken } = jwtHandler.issueRefreshToken();
+
+            await User.update({
+                refreshtoken,
+            }, {
+                where: { email },
+            });
+
+            const socialUser = {
+                nickname: existUser.nickname,
+                accesstoken,
+                refreshtoken,
+            };
+            return socialUser;
+        } catch (error) {
+            console.log(error);
+            return -3;
+        }
+
     },
 }
