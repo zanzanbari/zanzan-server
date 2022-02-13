@@ -1,9 +1,8 @@
-const admin = require('firebase-admin');
-const { signInWithEmailAndPassword, signOut } = require('@firebase/auth');
-const { firebaseAuth } = require('../config/firebaseClient');
 const User = require('../database/models/user');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const jwtHandler = require('../module/jwtHandler');
-const { emailValidator } = require('../module/validator');
+const { emailValidator, passwordValidator } = require('../module/validator');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -17,44 +16,37 @@ module.exports = {
         const { email, nickname , password } = userDTO;
         // 에러1: 필수 입력값 없음 
         if (!email || !nickname || !password) return -1;
-        // 추가 에러: 이메일 형식 오류
-        if ( !emailValidator(email) ) return -7;
+        // 에러2,3: 형식 오류
+        if ( !emailValidator(email) ) return -2;
+        if ( !passwordValidator(password)) return -3;
 
         try {
-            // firebase에 유저 생성
-            const userFirebase = await admin
-                .auth()
-                .createUser({ email, password })
-                .then(user => user)
-                .catch(e => {
-                    console.log(e);
-                    return { err: true, error: e };
-                });
+            const existUser = await User.findOne({ where: { email } });
+            // 애러4: 이미 존재하는 유저
+            if (existUser) return -4;
 
-            if (userFirebase.err) {
-                // 에러2: 이미 존재하는 사용자
-                if (userFirebase.error.code === 'auth/email-already-exists') return -2;
-                // 에러3: 이메일 형식 오류
-                else if (userFirebase.error.code === 'auth/invalid-email') return -3;
-                // 에러4: 비밀번호 형식 오류
-                else if (userFirebase.error.code === 'auth/invalid-password') return -4;
-                // 에러5: 파이어베이스 오류
-                else return -5;
-            }
+            // TODO FIXME: 해싱 후 반환 값이 hash string 
+            // TODO => DB 저장 시 error: value too long for type character varying(50) 발생.
+            // pwd 해싱 후 디비에 유저 생성 
 
-            const idFirebase = userFirebase.uid;
-            // 회원가입 성공 시 db에 유저 생성
+            // bcrypt 사용
+            // const salt = await bcrypt.genSalt(10);
+            // const hashedPassword = await bcrypt.hash(password, salt);
+
+            // crypto 사용
+            // const salt = crypto.randomBytes(32).toString('hex');
+            // const hashedPassword = crypto.pbkdf2Sync(password, salt, 1, 32, 'sha512').toString('hex');
             const newUser = await User.create({
                 email,
-                idFirebase,
-                nickname
+                password, //: hashedPassword,
+                nickname,
             });
-
-            return newUser;
+            console.log('🐯🐯🐯',newUser);
+            return true;
         } catch (error) {
             console.log(error);
-            // 에러6: DB에러
-            return -6;
+            // 에러5: DB에러
+            return -5;
         }
     },
 /**
@@ -66,52 +58,35 @@ module.exports = {
         const { email, password } = userDTO;
         // 에러1: 필요한 값 없음
         if (!email || !password) return -1;
+        // 에러2: 이메일 형식 오류
+        if ( !emailValidator(email) ) return -2;
 
         try {
-            const userFirebase = await signInWithEmailAndPassword(firebaseAuth, email, password)
-                .then(user => user)
-                .catch(e => {
-                    console.log(e);
-                    return { err: true, error: e };
-                });
+            const isUser = await User.findOne({ where: { email } });
+            if (!isUser) return -3; // 에러3: 해당 유저 없음
+            // TODO: FIXME: 회원가입 시 DB에 해싱값 저장 불가 이슈로 인한 오류
+            // const isMatch = await bcrypt.compare(password, isUser.password);
+            // if (!isMatch) return -3; // 에러4: 비밀번호 일치하지 않음
+            if (password !== isUser.password) return -4;
 
-            if (userFirebase.err) {
-                // 에러2: 해당 유저 없음
-                if (userFirebase.error.code === 'auth/user-not-found') return -2;
-                // 에러3: 이메일 형식 오류
-                else if (userFirebase.error.code === 'auth/invalid-email') return -3;
-                // 에러4: 비밀번호 오류
-                else if (userFirebase.error.code === 'auth/wrong-password') return -4;
-                // 에러5: firebase 오류
-                else return -5;
-            }
-            // 해당 user의 idFirebase로 유저 정보 가져오기
-            const idFirebase = userFirebase.user.uid;
-            const isUser = await User.findOne({ where: { idFirebase }});
+            const { accesstoken } = jwtHandler.issueAccessToken(isUser);
+            const { refreshtoken } = jwtHandler.issueRefreshToken();
+            await User.update({
+                refreshtoken,
+            }, {
+                where: { email },
+            });
 
-            if (isUser) {
-                // 토큰 발급 
-                const { accesstoken } = jwtHandler.issueAccessToken(isUser);
-                const { refreshtoken } = jwtHandler.issueRefreshToken();
-                // refreshtoken 유저 db에 저장
-                await User.update({
-                    refreshtoken: refreshtoken,
-                }, {
-                    where: { idFirebase },
-                });
-
-                let user = {
-                    nickname: isUser.nickname,
-                    accesstoken,
-                    refreshtoken,
-                };
-
-                return user;
-            }
+            let user = {
+                nickname: isUser.nickname,
+                accesstoken,
+                refreshtoken,
+            };
+            return user;
         } catch (error) {
             console.log(error);
-            // 에러6: DB에러
-            return -6;
+            // 에러5: DB에러
+            return -5;
         }
     },
 /**
@@ -120,13 +95,13 @@ module.exports = {
  *  @access private
  */
     logout: async (userDTO) => {
-        const { nickname, idFirebase } = userDTO;
+        const { nickname, email } = userDTO;
 
         try {
             await User.update({
                 refreshtoken: null 
             }, { 
-                where: { idFirebase } 
+                where: { email } 
             });
 
             let logoutUser = {

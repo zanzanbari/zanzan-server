@@ -15,10 +15,10 @@ const authUtil = {
 
             if (accesstokenDecode === TOKEN_EXPIRED) return res.status(401).send(util.fail(401, '토큰이 만료되었습니다.'));
             if (accesstokenDecode === TOKEN_INVALID) return res.status(401).send(util.fail(401, '토큰이 유효하지 않습니다.'));
-            if (accesstokenDecode.idFirebase === undefined) return res.status(401).send(util.fail(401, '토큰이 유효하지 않습니다.'));
+            if (accesstokenDecode.id === undefined) return res.status(401).send(util.fail(401, '토큰이 유효하지 않습니다.'));
 
-            const idFirebase = accesstokenDecode.idFirebase;
-            const user = await User.findOne({ where : { idFirebase } });
+            const userId = accesstokenDecode.id;
+            const user = await User.findOne({ where : { userId } });
             req.user = user;
             next();
         } catch (error) {
