@@ -25,12 +25,12 @@ module.exports = {
             // 애러4: 이미 존재하는 유저
             if (existUser) return -4;
 
-            // TODO FIXME: 해싱 후 반환 값이 hash string 
-            // TODO => DB 저장 시 error: value too long for type character varying(50) 발생.
             // pwd 해싱 후 디비에 유저 생성 
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
             const newUser = await User.create({
                 email,
-                password, //: hashedPassword,
+                password: hashedPassword,
                 nickname,
             });
             if (newUser) return true;
@@ -55,8 +55,9 @@ module.exports = {
         try {
             const isUser = await User.findOne({ where: { email } });
             if (!isUser) return -3; // 에러3: 해당 유저 없음
-            // TODO: FIXME: 회원가입 시 DB에 해싱값 저장 불가 이슈로 인한 오류
-            if (password !== isUser.password) return -4;
+
+            const isMatch = await bcrypt.compare(password, isUser.password);
+            if (!isMatch) return -4; // 에러4: 비밀번호 일치하지 않음
 
             const { accesstoken } = jwtHandler.issueAccessToken(isUser);
             const { refreshtoken } = jwtHandler.issueRefreshToken();

@@ -16,7 +16,7 @@ module.exports = {
             // 에러4: 이미 존재하는 사용자
             else if (data === -4) return res.status(400).send(util.fail(400,'이미 존재하는 사용자입니다.'));
             // 에러5: DB에러
-            else if (data === -5) return res.status(400).send(util.fail(600,'데이터베이스 오류'));
+            else if (data === -5) return res.status(600).send(util.fail(600,'데이터베이스 오류'));
             // 회원가입 성공
             else return res.status(200).send(util.success(200, '회원가입이 완료되었습니다.', data));
         } catch (error) {
@@ -39,7 +39,7 @@ module.exports = {
             // 에러4: 비밀번호 오류
             else if (data === -4) return res.status(400).send(util.fail(400,'비밀번호가 일치하지 않습니다.'));
             // 에러5: DB 오류
-            else if (data === -5) return res.status(400).send(util.fail(600,'데이터베이스 오류'));
+            else if (data === -5) return res.status(600).send(util.fail(600,'데이터베이스 오류'));
             // 로그인 성공
             else return res.status(200).send(util.success(200, '로그인 되었습니다.', data));
         } catch (error) {
