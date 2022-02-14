@@ -8,7 +8,7 @@ const dotenv = require("dotenv");
 const hpp = require("hpp");
 const helmet = require("helmet");
 const indexRouter = require("./router");
-const { sequelize } = require('./database/models');
+const { sequelize } = require('./models');
 
 // initializing
 dotenv.config();
