@@ -1,5 +1,4 @@
 const Sequelize = require('sequelize');
-const bcrypt = require('bcryptjs');
 
 module.exports = class User extends Sequelize.Model {
     static init(sequelize) { // 테이블 컬럼 설정
