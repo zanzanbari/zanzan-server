@@ -82,53 +82,6 @@ module.exports = {
         }
     },
 
-    kakaoAuth: async (req,res) => {
-        const code = req.query['code'];
-        const state = req.query['state'];
-        const error = req.query['error'];
-        const error_description = req.query['error_description'];
-        if(!code || error){ return res.status(400).send(util.fail(state, `인가 코드 발급 실패. ${error_description}`)); }
-
-        try {
-            const data = await authService.kakaoLogin(code);
-            // 에러1: 필요한 값 없음
-            if (data === -1) return res.status(400).send(util.fail(400, '토큰이 없습니다.'));
-            // 에러2: 토큰 모두 만료
-            else if (data === -2) return res.status(401).send(util.fail(401, '다시 로그인 하십시오.'));
-            // 에러3: DB에러
-            else if (data === -3) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
-            // 토큰 재발급
-            else return res.status(200).send(util.success(200, '토큰이 발급 되었습니다.', data));
-
-        } catch (error) {
-            console.log(error);
-            return res.status(500).send(util.fail(500, '서버 내 오류'));
-        }
-    },
-
-    naverLogin: async (req, res) => {
-        const {
-            query: {
-                code, 
-                state, 
-            }
-        } = req; // const { code, state} = req.query;
-
-        try {
-            const data = await authService.naverLogin(code, state);
-            // 에러1: 필요한 값 없음
-            if (data === -1) return res.status(400).send(util.fail(400, '필수 입력 값이 누락되었습니다.'));
-            // 에러2: 인증되지 않은 유저
-            else if (data === -2) return res.status(401).send(util.fail(401, '인증되지 않은 유저입니다.'));
-            // 에러3: DB에러
-            else if (data === -3) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
-            // 소셜 로그인 성공
-            else return res.status(200).send(util.success(200, '로그인 되었습니다.', data));
-        } catch (error) {
-            console.log(error);
-            return res.status(500).send(util.fail(500, '서버 내 오류'));
-        }
-    }, 
     socialLogin: async (req,res) => {
 
         const {
@@ -137,12 +90,14 @@ module.exports = {
                 state, 
                 error,
                 error_description
+            },
+            params: {
+                social
             }
         } = req; // const { code, state} = req.query;
         
         if(!code || error){ return res.status(400).send(util.fail(state, `인가 코드 발급 실패. ${error_description}`)); }
-
-        const { social } = req.params;
+        
         let data;
 
         try {

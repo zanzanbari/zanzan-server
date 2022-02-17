@@ -2,6 +2,7 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const qs = require('qs');
 const fetch = require('node-fetch');
+const axios = require('axios');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
 const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI } = require('../module/api');
@@ -183,30 +184,6 @@ module.exports = {
             });
 
             return data;
-
-
-            /*      access token 발급 받기      */ //왜 axios 안되시는지,,,? 빠큐
-            /*await axios.post('https://kauth.kakao.com/oauth/token', {
-                params: {
-                    grant_type: 'authorization_code',
-                    client_id: process.env.KAKAO_CLIENT_ID,
-                    redirect_uri: process.env.KAKAO_REDIRECT_URI,
-                    code: code
-                },
-                headers: {
-                    "content-type" : "application/x-www-form-urlencoded;charset=utf-8"
-                },
-                json: true
-            }).then(async (res) => {
-                let jsonRes = res.data;
-                console.log(jsonRes);
-                //accessToken = jsonRes.access_token;
-                //var expireIn = jsonRes.expires_in;
-                //refreshToken = jsonRes["refresh_token"];
-                //var refreshTokenExpiresIn = jsonRes["refresh_token_expires_in"];
-                console.log("jsonRes: ",jsonRes);
-        })*/
-
 
         } catch (error) {
             console.log(error);
