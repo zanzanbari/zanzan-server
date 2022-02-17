@@ -8,7 +8,7 @@ const dotenv = require("dotenv");
 const hpp = require("hpp");
 const helmet = require("helmet");
 const indexRouter = require("./router");
-const { sequelize } = require('./models');
+const { sequelize } = require('./database/models');
 
 // initializing
 dotenv.config();
@@ -26,7 +26,7 @@ sequelize.authenticate()
     });
 
 // 시퀄라이즈 모델 DB에 싱크
-sequelize.sync({ force: false })
+sequelize.sync({ alert: true })
     .then(() => {
         console.log('✅ Sync Models to DB');
     })

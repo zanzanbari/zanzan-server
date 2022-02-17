@@ -99,9 +99,34 @@ module.exports = {
             else if (data === -3) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
             // 토큰 재발급
             else return res.status(200).send(util.success(200, '토큰이 발급 되었습니다.', data));
+
         } catch (error) {
             console.log(error);
             return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
-   }
+    },
+
+    naverLogin: async (req, res) => {
+        const {
+            query: {
+                code, 
+                state, 
+            }
+        } = req; // const { code, state} = req.query;
+
+        try {
+            const data = await authService.naverLogin(code, state);
+            // 에러1: 필요한 값 없음
+            if (data === -1) return res.status(400).send(util.fail(400, '필수 입력 값이 누락되었습니다.'));
+            // 에러2: 인증되지 않은 유저
+            else if (data === -2) return res.status(401).send(util.fail(401, '인증되지 않은 유저입니다.'));
+            // 에러3: DB에러
+            else if (data === -3) return res.status(600).send(util.fail(600, '데이터베이스 오류'));
+            // 소셜 로그인 성공
+            else return res.status(200).send(util.success(200, '로그인 되었습니다.', data));
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send(util.fail(500, '서버 내 오류'));
+        }
+    }, 
 }

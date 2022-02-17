@@ -1,11 +1,10 @@
 const User = require('../models/user');
-const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const axios = require('axios');
 const qs = require('qs');
 const fetch = require('node-fetch');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
+const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI } = require('../module/api');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -97,7 +96,7 @@ module.exports = {
                 where: { email } 
             });
 
-            let logoutUser = {
+            const logoutUser = {
                 nickname,
             };
             return logoutUser;
@@ -215,5 +214,38 @@ module.exports = {
             console.log(error);
             return -5;
         }
-    }
+    },
+
+    naverLogin: async (code, state) => {
+        // 에러1: 필수 입력 값 없음
+        if (!code || !state) return -1;
+
+        let user;
+        try {
+            const { access_token: naverAccessToken } = await getNaverTokenByCodeAndStateAPI(code, state);
+            const naverUser = await NaverAuthAPI(naverAccessToken);
+            const { refreshtoken } = jwtHandler.issueRefreshToken();
+            user = await User.findOrCreate({
+                where: { email: naverUser.email },
+                defaults: {
+                    social: 'naver',
+                    email: naverUser.email,
+                    nickname: naverUser.nickname,
+                    password: null,
+                    refreshtoken,
+                },
+            });
+            const { accesstoken } = jwtHandler.issueAccessToken(user);
+            const loggedInUser = {
+                nickname: naverUser.nickname,
+                accesstoken,
+                refreshtoken,
+            };
+            return loggedInUser;
+        } catch (error) {
+            console.log(error);
+            return -3;
+        }
+
+    },
 }
