@@ -1,10 +1,10 @@
 const admin = require('firebase-admin');
 const { signInWithEmailAndPassword, signOut } = require('@firebase/auth');
 const { firebaseAuth } = require('../config/firebaseClient');
-const User = require('../database/models/user');
+const User = require('../models/user');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator } = require('../module/validator');
-const { getNaverTokenByCodeAPI, NaverAuthAPI } = require('../module/api');
+const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI, verifyNaverUserAllowed } = require('../module/api');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -161,57 +161,32 @@ module.exports = {
         }
     },
 
-    socialLogin: async (userDTO) => {
-        const { code, social, token } = userDTO;
+    naverLogin: async (code, state) => {
         // 에러1: 필수 입력 값 없음
-        if (!code || !social) return -1;
+        if (!code || !state) return -1;
 
+        let user;
         try {
-            let user;
-            switch (social) {
-                case 'naver':
-                    const naverAccessToken = await getNaverTokenByCodeAPI(code);
-                    user = await NaverAuthAPI(naverAccessToken);
-                    break;
-                case 'kakao':
-                    break;
-                case 'apple':
-                    break;
-            }
-            // 에러2: 인증되지 않은 유저
-            if (!user) return -2;
-            
-            const email = user.email;
-            const nickname = user.nickname;
-            const existUser = await User.findOne({ where: { email } });
-            if (!existUser) {
-                const { refreshtoken } = jwtHandler.issueRefreshToken();
-                const newUser = await User.create({
-                    email,
-                    nickname,
-                    refreshtoken,
-                    social,
-                });
-                const { accesstoken } = jwtHandler.issueAccessToken(newUser);
-                newUser.accesstoken = accesstoken;
-                return newUser;
-            }
-
-            const { accesstoken } = jwtHandler.issueAccessToken(existUser);
+            const { access_token: naverAccessToken } = await getNaverTokenByCodeAndStateAPI(code, state);
+            const naverUser = await NaverAuthAPI(naverAccessToken);
             const { refreshtoken } = jwtHandler.issueRefreshToken();
-
-            await User.update({
-                refreshtoken,
-            }, {
-                where: { email },
+            user = await User.findOrCreate({
+                where: { email: naverUser.email },
+                defaults: {
+                    social: 'naver',
+                    email: naverUser.email,
+                    nickname: naverUser.nickname,
+                    password: null,
+                    refreshtoken,
+                },
             });
-
-            const socialUser = {
-                nickname: existUser.nickname,
+            const { accesstoken } = jwtHandler.issueAccessToken(user);
+            const loggedInUser = {
+                nickname: naverUser.nickname,
                 accesstoken,
                 refreshtoken,
             };
-            return socialUser;
+            return loggedInUser;
         } catch (error) {
             console.log(error);
             return -3;

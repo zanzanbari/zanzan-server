@@ -88,11 +88,16 @@ module.exports = {
         }
     },
 
-    socialLogin: async (req, res) => {
-        const userDTO = req.query;
+    naverLogin: async (req, res) => {
+        const {
+            query: {
+                code, 
+                state, 
+            }
+        } = req; // const { code, state} = req.query;
 
         try {
-            const data = await authService.socialLogin(userDTO);
+            const data = await authService.naverLogin(code, state);
             // 에러1: 필요한 값 없음
             if (data === -1) return res.status(400).send(util.fail(400, '필수 입력 값이 누락되었습니다.'));
             // 에러2: 인증되지 않은 유저

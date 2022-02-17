@@ -7,6 +7,6 @@ router.post('/join',  authController.join);
 router.post('/login', authController.login);
 router.get('/logout', authUtil.checkUserByToken, authController.logout);
 router.get('/reissue/token', authController.reissueToken);
-router.post('/social', authController.socialLogin);
+router.post('/naver/login', authController.naverLogin);
 
 module.exports = router;
