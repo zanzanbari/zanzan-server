@@ -160,7 +160,7 @@ module.exports = {
                 }
             }).then(async (res) => {
                 let jsonRes = await res.json();
-                nickname = jsonRes.properties['nickname'];
+                let nickname = jsonRes.properties['nickname'];
                 let email = jsonRes.kakao_account['email'];
                 return {nickname, email}
             }).then(async (data)=>{ /*        DB에 user의 refresh token을 갱신       */
