@@ -128,10 +128,11 @@ module.exports = {
     },
 
 
+    
     kakaoLogin: async (code) => {
 
-        let accessToken, refreshToken, nickname;
-        let result;
+        let accessToken;
+
         try{
 
             /*      access token 발급 받기      */
@@ -148,11 +149,10 @@ module.exports = {
                 }),}).then(async (res) => {
                     let jsonRes = await res.json(); //axios는 res.data
                     accessToken = jsonRes.access_token;
-                    refreshToken = jsonRes.refresh_token;
                 });
 
             /*      사용자 정보 받기      */
-            await fetch('https://kapi.kakao.com/v2/user/me', {
+            const data = await fetch('https://kapi.kakao.com/v2/user/me', {
                 method: 'POST',
                 headers: {
                     'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
@@ -162,8 +162,6 @@ module.exports = {
                 let jsonRes = await res.json();
                 nickname = jsonRes.properties['nickname'];
                 let email = jsonRes.kakao_account['email'];
-
-                result = nickname;
                 return {nickname, email}
             }).then(async (data)=>{ /*        DB에 user의 refresh token을 갱신       */
                 let {nickname, email} = data;
@@ -173,20 +171,21 @@ module.exports = {
                         defaults: {
                         email,
                         nickname,
-                        refreshtoken: refreshToken,
+                        refreshtoken,
                         social: 'kakao'
                         }
                 });
-                    const { accesstoken } = jwtHandler.issueAccessToken(user);
-                
+
+                const { accesstoken } = jwtHandler.issueAccessToken(user);
+
+                data = {nickname, accesstoken, refreshtoken}
+                console.log(data)
+                return data;
             });
 
-            /*      DB에 없으면 가입하기       */
-            /*const newUser = await User.create({
-                email,
-                password: hashedPassword,
-                nickname,
-            });*/
+            return data;
+
+
             /*      access token 발급 받기      */ //왜 axios 안되시는지,,,? 빠큐
             /*await axios.post('https://kauth.kakao.com/oauth/token', {
                 params: {
@@ -209,8 +208,6 @@ module.exports = {
                 console.log("jsonRes: ",jsonRes);
         })*/
 
-            
-            return {nickname, accesstoken, refreshtoken};
 
         } catch (error) {
             console.log(error);
