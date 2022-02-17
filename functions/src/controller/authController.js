@@ -83,7 +83,6 @@ module.exports = {
     },
 
     socialLogin: async (req,res) => {
-
         const {
             query: {
                 code, 
@@ -94,7 +93,7 @@ module.exports = {
             params: {
                 social
             }
-        } = req; // const { code, state} = req.query;
+        } = req; 
         
         if(!code || error){ return res.status(400).send(util.fail(state, `인가 코드 발급 실패. ${error_description}`)); }
         
