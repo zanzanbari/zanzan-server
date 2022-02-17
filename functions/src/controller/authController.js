@@ -85,32 +85,25 @@ module.exports = {
     socialLogin: async (req,res) => {
         const {
             query: {
-                code, 
-                state, 
-                error,
-                error_description
+                token: socialAccessToken,
             },
             params: {
                 social
-            }
+            },
         } = req; 
-        
-        if(!code || error){ return res.status(400).send(util.fail(state, `인가 코드 발급 실패. ${error_description}`)); }
-        
-        let data;
 
+        if (!socialAccessToken || !social) return res.status(400).send(util.fail(400, '필요한 값이 전달되지 않았습니다.'));
+        
         try {
-            switch(social) {
-                case 'kakao': {
-                    data = await authService.kakaoLogin(code);
+            let data;
+            switch (social) {
+                case 'kakao': 
+                    data = await authService.kakaoLogin(socialAccessToken);
                     break;
-                }
-                case 'naver': {
-                    data = await authService.naverLogin(code, state);
+                case 'naver':
+                    data = await authService.naverLogin(socialAccessToken);
                     break;
-                }
             }
-    
             // 에러1: 필요한 값 없음
             if (data === -1) return res.status(400).send(util.fail(400, '토큰이 없습니다.'));
             // 에러2: 토큰 모두 만료

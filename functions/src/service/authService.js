@@ -159,13 +159,9 @@ module.exports = {
         }
     },
 
-    naverLogin: async (code, state) => {
-        // 에러1: 필수 입력 값 없음
-        if (!code || !state) return -1;
-
+    naverLogin: async (naverAccessToken) => {
         let user;
         try {
-            const { access_token: naverAccessToken } = await getNaverTokenByCodeAndStateAPI(code, state);
             const naverUser = await NaverAuthAPI(naverAccessToken);
             const { refreshtoken } = jwtHandler.issueRefreshToken();
             user = await User.findOrCreate({
