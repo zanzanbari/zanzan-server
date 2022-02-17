@@ -7,5 +7,6 @@ router.post('/join',  authController.join);
 router.post('/login', authController.login);
 router.get('/logout', authUtil.checkUserByToken, authController.logout);
 router.get('/reissue/token', authController.reissueToken);
+router.get('/kakao/callback', authController.kakaoAuth);
 
 module.exports = router;

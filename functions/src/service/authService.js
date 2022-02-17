@@ -1,6 +1,9 @@
 const User = require('../models/user');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
+const qs = require('qs');
+const fetch = require('node-fetch');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
 const TOKEN_EXPIRED = -3;
@@ -124,4 +127,93 @@ module.exports = {
             return -3;
         }
     },
+
+
+    kakaoLogin: async (code) => {
+
+        let accessToken, refreshToken, nickname;
+        let result;
+        try{
+
+            /*      access token 발급 받기      */
+            await fetch('https://kauth.kakao.com/oauth/token', {
+                method: 'POST',
+                headers: {
+                    'content-type':'application/x-www-form-urlencoded;charset=utf-8'
+                },
+                body: qs.stringify({
+                    grant_type: 'authorization_code',//특정 스트링
+                    client_id: process.env.KAKAO_CLIENT_ID,
+                    redirectUri: process.env.KAKAO_REDIRECT_URI,
+                    code
+                }),}).then(async (res) => {
+                    let jsonRes = await res.json(); //axios는 res.data
+                    accessToken = jsonRes.access_token;
+                    refreshToken = jsonRes.refresh_token;
+                });
+
+            /*      사용자 정보 받기      */
+            await fetch('https://kapi.kakao.com/v2/user/me', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            }).then(async (res) => {
+                let jsonRes = await res.json();
+                nickname = jsonRes.properties['nickname'];
+                let email = jsonRes.kakao_account['email'];
+
+                result = nickname;
+                return {nickname, email}
+            }).then(async (data)=>{ /*        DB에 user의 refresh token을 갱신       */
+                let {nickname, email} = data;
+                const existingUser = await User.findOne({ where: {email}});
+                if (!existingUser){ /*      DB에 없으면 가입하기       */
+                    console.log("그런 사람 없어요");
+                    const newUser = await User.create({
+                        email,
+                        nickname,
+                        refreshtoken: refreshToken,
+                        social: 'kakao'
+                    });
+                } else { await User.update({refreshtoken: refreshToken},{where: {email}})}
+            });
+
+            /*      DB에 없으면 가입하기       */
+            /*const newUser = await User.create({
+                email,
+                password: hashedPassword,
+                nickname,
+            });*/
+            /*      access token 발급 받기      */ //왜 axios 안되시는지,,,? 빠큐
+            /*await axios.post('https://kauth.kakao.com/oauth/token', {
+                params: {
+                    grant_type: 'authorization_code',
+                    client_id: process.env.KAKAO_CLIENT_ID,
+                    redirect_uri: process.env.KAKAO_REDIRECT_URI,
+                    code: code
+                },
+                headers: {
+                    "content-type" : "application/x-www-form-urlencoded;charset=utf-8"
+                },
+                json: true
+            }).then(async (res) => {
+                let jsonRes = res.data;
+                console.log(jsonRes);
+                //accessToken = jsonRes.access_token;
+                //var expireIn = jsonRes.expires_in;
+                //refreshToken = jsonRes["refresh_token"];
+                //var refreshTokenExpiresIn = jsonRes["refresh_token_expires_in"];
+                console.log("jsonRes: ",jsonRes);
+        })*/
+
+            
+            return {nickname, accessToken, refreshToken};
+
+        } catch (error) {
+            console.log(error);
+            return -5;
+        }
+    }
 }
