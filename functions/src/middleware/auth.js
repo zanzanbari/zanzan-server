@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const util = require('../module/util');
 const jwtHandler = require('../module/jwtHandler');
-const User = require('../database/models/user');
+const User = require('../models/user');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
