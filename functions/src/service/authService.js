@@ -168,16 +168,18 @@ module.exports = {
                 return {nickname, email}
             }).then(async (data)=>{ /*        DB에 user의 refresh token을 갱신       */
                 let {nickname, email} = data;
-                const existingUser = await User.findOne({ where: {email}});
-                if (!existingUser){ /*      DB에 없으면 가입하기       */
-                    console.log("그런 사람 없어요");
-                    const newUser = await User.create({
+                const { refreshtoken } = jwtHandler.issueRefreshToken();
+                const user = await User.findOrCreate({
+                        where: {email},
+                        defaults: {
                         email,
                         nickname,
                         refreshtoken: refreshToken,
                         social: 'kakao'
-                    });
-                } else { await User.update({refreshtoken: refreshToken},{where: {email}})}
+                        }
+                });
+                    const { accesstoken } = jwtHandler.issueAccessToken(user);
+                
             });
 
             /*      DB에 없으면 가입하기       */
@@ -209,7 +211,7 @@ module.exports = {
         })*/
 
             
-            return {nickname, accessToken, refreshToken};
+            return {nickname, accesstoken, refreshtoken};
 
         } catch (error) {
             console.log(error);
