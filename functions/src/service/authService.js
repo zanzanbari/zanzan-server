@@ -1,8 +1,5 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
-const qs = require('qs');
-const fetch = require('node-fetch');
-const axios = require('axios');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
 const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI, getKakaoTokenByCodeAPI, KakaoAuthAPI } = require('../module/api');
@@ -139,7 +136,7 @@ module.exports = {
 
             /*      사용자 정보 받기      */
             const data = await KakaoAuthAPI(accessToken);
-            
+
             /*       DB에 user의 refresh token을 갱신     */
             let {nickname, email} = data;
             const { refreshtoken } = jwtHandler.issueRefreshToken();
