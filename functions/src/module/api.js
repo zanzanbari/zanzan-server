@@ -1,9 +1,10 @@
-const axios = require('axios');
-const querystring = require('qs');
-const { naver_client_id, naver_client_secret } = require('../config/naverAPI');
+const fetch = require('node-fetch');
+const qs = require('qs');
+const naver_client_id = process.env.NAVER_CLIENT_ID;
+const naver_client_secret = process.env.NAVER_CLIENT_SECRETE;
 
 module.exports = {
-    getNaverTokenByCodeAPI: async (code) => {
+    getNaverTokenByCodeAndStateAPI: async (code, state) => {
         try {
             const baseUrl = 'https://nid.naver.com/oauth2.0/token';
             const config = {
@@ -11,19 +12,29 @@ module.exports = {
                 client_id: naver_client_id,
                 client_secret: naver_client_secret,
                 code: code,
+                state: state,
             };
-            const params = new URLSearchParams(config).toString();
-            const finalUrl = `${baseUrl}?${params}`;
-            console.log('📌',finalUrl);
-            const tokenData = await axios.get(finalUrl);
-            console.log('📌📌',tokenData);
-            if ('access_token' in tokenData) {
-                const { access_token } = tokenData;
-                return access_token;
-            } else {
-                const err = new Error('access_token 가져오기 실패');
-                return err;
+            const queryString = qs.stringify(config);
+            const finalUrl = `${baseUrl}?${queryString}`;
+            const tokenData = await (
+                await fetch(finalUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-Naver-Client-Id': naver_client_id,
+                        'X-Naver-Client-Secret': naver_client_secret
+                    },
+                })
+            ).json();
+            if ('error' in tokenData) {
+                let { error, error_description } = tokenData;
+                return new Error({ error, error_description });
             }
+            const { access_token, refresh_token } = tokenData;
+            const result = {
+                access_token,
+                refresh_token,
+            };
+            return result;
         } catch (error) {
             console.log('❌ Naver request API Error: ', error);
             return new Error(error);
@@ -32,30 +43,16 @@ module.exports = {
 
     NaverAuthAPI: async (naverAccessToken) => {
         try {
-            // const verifyUser = await axios({
-            //     method: 'GET',
-            //     url: 'https://openapi.naver.com/v1/nid/verify',
-            //     body: {
-            //         info: true,
-            //     },
-            //     Headers: {
-            //         Authorization: `Bearer ${naverAccessToken}`,
-            //     },
-            // });
-            // console.log('🚀🚀🚀 verifyUser: ', verifyUser);
-
-            const user = await axios({
-                method: 'GET',
-                url: 'https://openapi.naver.com/v1/nid/me',
-                Headers: {
-                    Authorization: `Bearer ${naverAccessToken}`,
-                },
-            });
-
-            const naverUser = user.data.response;
-            // TODO: 에러처리
-            console.log('🐯🐯🐯 naverUser:', naverUser);
-
+            const apiUrl = 'https://openapi.naver.com/v1/nid/me';
+            const userData = await (
+                await fetch(apiUrl, {
+                    method: 'POST', // GET 안되고 POST이어야 함
+                    headers: {
+                        Authorization: `Bearer ${naverAccessToken}`,
+                    },
+                })
+            ).json(); // json 형태로 받는거 잊지 마라
+            const naverUser = userData.response;
             return naverUser;
         } catch (error) {
             console.log('❌ Cannot find Naver User: ', error);
