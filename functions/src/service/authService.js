@@ -2,9 +2,10 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const qs = require('qs');
 const fetch = require('node-fetch');
+const axios = require('axios');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
-const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI } = require('../module/api');
+const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI, getKakaoTokenByCodeAPI, KakaoAuthAPI } = require('../module/api');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -131,87 +132,33 @@ module.exports = {
     
     kakaoLogin: async (code) => {
 
-        let accessToken;
-
+        let result;
         try{
-
             /*      access token 발급 받기      */
-            await fetch('https://kauth.kakao.com/oauth/token', {
-                method: 'POST',
-                headers: {
-                    'content-type':'application/x-www-form-urlencoded;charset=utf-8'
-                },
-                body: qs.stringify({
-                    grant_type: 'authorization_code',//특정 스트링
-                    client_id: process.env.KAKAO_CLIENT_ID,
-                    redirectUri: process.env.KAKAO_REDIRECT_URI,
-                    code
-                }),}).then(async (res) => {
-                    let jsonRes = await res.json(); //axios는 res.data
-                    accessToken = jsonRes.access_token;
-                });
+            const accessToken = await getKakaoTokenByCodeAPI(code);
 
             /*      사용자 정보 받기      */
-            const data = await fetch('https://kapi.kakao.com/v2/user/me', {
-                method: 'POST',
-                headers: {
-                    'Content-type': 'application/x-www-form-urlencoded;charset=utf-8',
-                    'Authorization': `Bearer ${accessToken}`
+            const data = await KakaoAuthAPI(accessToken);
+            
+            /*       DB에 user의 refresh token을 갱신     */
+            let {nickname, email} = data;
+            const { refreshtoken } = jwtHandler.issueRefreshToken();
+            const user = await User.findOrCreate({
+                where: {email},
+                defaults: {
+                email,
+                nickname,
+                refreshtoken,
+                social: 'kakao'
                 }
-            }).then(async (res) => {
-                let jsonRes = await res.json();
-                let nickname = jsonRes.properties['nickname'];
-                let email = jsonRes.kakao_account['email'];
-                return {nickname, email}
-            }).then(async (data)=>{ /*        DB에 user의 refresh token을 갱신       */
-                let {nickname, email} = data;
-                const { refreshtoken } = jwtHandler.issueRefreshToken();
-                const user = await User.findOrCreate({
-                        where: {email},
-                        defaults: {
-                        email,
-                        nickname,
-                        refreshtoken,
-                        social: 'kakao'
-                        }
-                });
-
-                const { accesstoken } = jwtHandler.issueAccessToken(user);
-
-                data = {nickname, accesstoken, refreshtoken}
-                console.log(data)
-                return data;
             });
+            const { accesstoken } = jwtHandler.issueAccessToken(user);
 
-            return data;
-
-
-            /*      access token 발급 받기      */ //왜 axios 안되시는지,,,? 빠큐
-            /*await axios.post('https://kauth.kakao.com/oauth/token', {
-                params: {
-                    grant_type: 'authorization_code',
-                    client_id: process.env.KAKAO_CLIENT_ID,
-                    redirect_uri: process.env.KAKAO_REDIRECT_URI,
-                    code: code
-                },
-                headers: {
-                    "content-type" : "application/x-www-form-urlencoded;charset=utf-8"
-                },
-                json: true
-            }).then(async (res) => {
-                let jsonRes = res.data;
-                console.log(jsonRes);
-                //accessToken = jsonRes.access_token;
-                //var expireIn = jsonRes.expires_in;
-                //refreshToken = jsonRes["refresh_token"];
-                //var refreshTokenExpiresIn = jsonRes["refresh_token_expires_in"];
-                console.log("jsonRes: ",jsonRes);
-        })*/
-
+            return {nickname, accesstoken, refreshtoken}
 
         } catch (error) {
             console.log(error);
-            return -5;
+            return -3;
         }
     },
 
