@@ -7,7 +7,10 @@ router.post('/join',  authController.join);
 router.post('/login', authController.login);
 router.get('/logout', authUtil.checkUserByToken, authController.logout);
 router.get('/reissue/token', authController.reissueToken);
-router.get('/kakao/callback', authController.kakaoAuth);
-router.get('/naver/callback', authController.naverLogin);
+
+router.get('/:social/callback', authController.socialLogin);
+//router.get('/kakao/callback', authController.kakaoAuth);
+//router.get('/naver/callback', authController.naverLogin);
+
 
 module.exports = router;
