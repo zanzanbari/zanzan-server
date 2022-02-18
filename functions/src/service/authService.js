@@ -2,7 +2,7 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
-const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI, getKakaoTokenByCodeAPI, KakaoAuthAPI } = require('../module/api');
+const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI, getKakaoTokenByCodeAPI, KakaoAuthAPI, AppleAuthAPI } = require('../module/api');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -125,70 +125,43 @@ module.exports = {
         }
     },
 
+    socialLogin: async (socialAccessToken, social) => {
+        if (!socialAccessToken || !social) return -1;
 
-    
-    kakaoLogin: async (code) => {
-
-        let result;
-        try{
-            /*      access token 발급 받기      */
-            const accessToken = await getKakaoTokenByCodeAPI(code);
-
-            /*      사용자 정보 받기      */
-            const data = await KakaoAuthAPI(accessToken);
-
-            /*       DB에 user의 refresh token을 갱신     */
-            let {nickname, email} = data;
-            const { refreshtoken } = jwtHandler.issueRefreshToken();
-            const user = await User.findOrCreate({
-                where: {email},
-                defaults: {
-                email,
-                nickname,
-                refreshtoken,
-                social: 'kakao'
-                }
-            });
-            const { accesstoken } = jwtHandler.issueAccessToken(user);
-
-            return {nickname, accesstoken, refreshtoken}
-
-        } catch (error) {
-            console.log(error);
-            return -3;
-        }
-    },
-
-    naverLogin: async (code, state) => {
-        // 에러1: 필수 입력 값 없음
-        if (!code || !state) return -1;
-
-        let user;
         try {
-            const { access_token: naverAccessToken } = await getNaverTokenByCodeAndStateAPI(code, state);
-            const naverUser = await NaverAuthAPI(naverAccessToken);
+            let user;
+            switch (social) {
+                case 'naver': 
+                    user = await NaverAuthAPI(socialAccessToken);
+                    break;
+                case 'kakao': 
+                    user = await KakaoAuthAPI(socialAccessToken);
+                    break;
+                case 'apple': 
+                    user = await AppleAuthAPI(socialAccessToken);
+                    break;
+            };
             const { refreshtoken } = jwtHandler.issueRefreshToken();
-            user = await User.findOrCreate({
-                where: { email: naverUser.email },
+            const socialUser = await User.findOrCreate({
+                where: { email: user.email },
                 defaults: {
-                    social: 'naver',
-                    email: naverUser.email,
-                    nickname: naverUser.nickname,
+                    social,
+                    email: user.email,
+                    nickname: user.nickname,
                     password: null,
                     refreshtoken,
                 },
             });
-            const { accesstoken } = jwtHandler.issueAccessToken(user);
+            const { accesstoken } = jwtHandler.issueAccessToken(socialUser);
             const loggedInUser = {
-                nickname: naverUser.nickname,
+                nickname: user.nickname, // socialUser[0].dataValues.nickname
                 accesstoken,
                 refreshtoken,
             };
             return loggedInUser;
         } catch (error) {
             console.log(error);
-            return -3;
+            return -2;
         }
-
     },
 }

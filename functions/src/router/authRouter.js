@@ -7,7 +7,6 @@ router.post('/join',  authController.join);
 router.post('/login', authController.login);
 router.get('/logout', authUtil.checkUserByToken, authController.logout);
 router.get('/reissue/token', authController.reissueToken);
-router.get('/:social/callback', authController.socialLogin);
-
+router.post('/:social/login', authController.socialLogin);
 
 module.exports = router;
