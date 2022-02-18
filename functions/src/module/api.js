@@ -1,7 +1,6 @@
 const fetch = require('node-fetch');
 const qs = require('qs');
-const naver_client_id = process.env.NAVER_CLIENT_ID;
-const naver_client_secret = process.env.NAVER_CLIENT_SECRETE;
+const jwt = require('jsonwebtoken');
 
 module.exports = {
     NaverAuthAPI: async (naverAccessToken) => {
@@ -65,6 +64,17 @@ module.exports = {
         } catch (error) {
             console.log('❌ Cannot find Kakao User: ', error);
             return new Error(error);
+        }
+    },
+
+    AppleAuthAPI: async (appleAccessToken) => {
+        try {
+            const appleUser = jwt.decode(appleAccessToken);
+            console.log(appleUser);
+            return appleUser;
+        } catch (error) {
+            console.log('❌ Cannot find Apple User: ', error);
+            return new Error(error);  
         }
     },
 }
