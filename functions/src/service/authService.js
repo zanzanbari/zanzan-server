@@ -158,7 +158,6 @@ module.exports = {
                 accesstoken,
                 refreshtoken,
             };
-            console.log('loggedInUSer: ', loggedInUser);
             return loggedInUser;
         } catch (error) {
             console.log(error);
