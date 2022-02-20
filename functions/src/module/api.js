@@ -46,7 +46,7 @@ module.exports = {
     AppleAuthAPI: async (appleAccessToken) => {
         try {
             const appleUser = jwt.decode(appleAccessToken);
-            console.log(appleUser);
+            console.log('✅ appleUser: ',appleUser);
             return appleUser;
         } catch (error) {
             console.log('❌ Cannot find Apple User: ', error);

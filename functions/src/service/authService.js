@@ -2,7 +2,7 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwtHandler = require('../module/jwtHandler');
 const { emailValidator, passwordValidator } = require('../module/validator');
-const { getNaverTokenByCodeAndStateAPI, NaverAuthAPI, getKakaoTokenByCodeAPI, KakaoAuthAPI, AppleAuthAPI } = require('../module/api');
+const {  NaverAuthAPI, KakaoAuthAPI, AppleAuthAPI } = require('../module/api');
 const TOKEN_EXPIRED = -3;
 const TOKEN_INVALID = -2;
 
@@ -71,6 +71,7 @@ module.exports = {
                 nickname: isUser.nickname,
                 accesstoken,
                 refreshtoken,
+                expiresIn: Math.floor(Date.now()/1000) + (60 * 60),
             };
             return user;
         } catch (error) {
@@ -117,7 +118,11 @@ module.exports = {
 
             const user = await User.findOne({ where : { refreshtoken } });
             const { accesstoken } = jwtHandler.issueAccessToken(user);
-            return accesstoken;
+            const result = {
+                accesstoken,
+                expiresIn: Math.floor(Date.now()/1000) + (60 * 60),
+            };
+            return result;
         } catch (error) {
             console.log(error);
             // 에러3: DB에러
@@ -127,7 +132,7 @@ module.exports = {
 
     socialLogin: async (socialAccessToken, social) => {
         if (!socialAccessToken || !social) return -1;
-
+        console.log('🚀socialAccessToken: ', socialAccessToken);
         try {
             let user;
             switch (social) {
@@ -141,6 +146,7 @@ module.exports = {
                     user = await AppleAuthAPI(socialAccessToken);
                     break;
             };
+            console.log('🚀user: ', user);
             const { refreshtoken } = jwtHandler.issueRefreshToken();
             const socialUser = await User.findOrCreate({
                 where: { email: user.email },
@@ -152,12 +158,14 @@ module.exports = {
                     refreshtoken,
                 },
             });
+            console.log('🚀socialUser: ', socialUser);
             const { accesstoken } = jwtHandler.issueAccessToken(socialUser);
             const loggedInUser = {
                 nickname: user.nickname, // socialUser[0].dataValues.nickname
                 accesstoken,
                 refreshtoken,
             };
+            console.log('🚀loggedInUser: ', loggedInUser);
             return loggedInUser;
         } catch (error) {
             console.log(error);

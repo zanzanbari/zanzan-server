@@ -64,7 +64,11 @@ module.exports = {
     },
 
     reissueToken: async (req, res) => {
-        const token = req.headers;
+        const {
+            headers: {
+                token
+            },
+        } = req;
 
         try {
             const data = await authService.reissueToken(token);
