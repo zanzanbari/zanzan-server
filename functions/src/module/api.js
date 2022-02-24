@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const qs = require('qs');
+const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 
 module.exports = {
@@ -50,6 +51,37 @@ module.exports = {
             return appleUser;
         } catch (error) {
             console.log('❌ Cannot find Apple User: ', error);
+            return new Error(error);  
+        }
+    },
+
+    findDirectionAPI: async (origin, destination ) => {
+        try {
+            const baseUrl = "https://apis-navi.kakaomobility.com/v1/directions";
+            const config = {
+                origin,
+                destination,
+            };
+            const querystring = qs.stringify(config);
+            const finalUrl = `${baseUrl}?${querystring}`;
+            const responseData = await (
+                await fetch(finalUrl, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `KakaoAK ${process.env.KAKAO_REST_API_KEY}`,
+                    },
+                })
+            ).json();
+            //console.log('🚀', responseData.routes[0]);
+            const result = _.map(responseData.routes, it => {
+                return {
+                    fare: it.summary.fare,
+                    routesData: it.sections[0],
+                }
+            });
+            return result[0];
+        } catch (error) {
+            console.log('❌ Cannot find Direction: ', error);
             return new Error(error);  
         }
     },
