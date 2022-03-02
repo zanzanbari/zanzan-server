@@ -1,41 +1,44 @@
 const Sequelize = require('sequelize');
 
-module.exports = class User extends Sequelize.Model {
+module.exports = class Driver extends Sequelize.Model {
     static init(sequelize) { // 테이블 컬럼 설정
         return super.init({
-            social: {
+            id: {
+                type: Sequelize.INTEGER,
+                allowNull:false,
+                unique:true,
+                autoIncrement: true,
+                primaryKey: true,
+            },
+            name: {
+                type: Sequelize.STRING(10),
+                allowNull: false,
+            },
+            carType: {
                 type: Sequelize.STRING(15),
                 allowNull: false,
-                defaultValue: 'local',
             },
-            email: {
-                type: Sequelize.STRING(40),
+            carNumber: {
+                type: Sequelize.STRING(10),
                 allowNull: false,
                 unique: true,
             },
-            password: {
-                type: Sequelize.STRING(100),
-                allowNull: true,
-            },
-            nickname: {
-                type: Sequelize.STRING(30),
+            location: {
+                type: Sequelize.ARRAY(Sequelize.TEXT),
                 allowNull: false,
-            },
-            refreshtoken: {
-                type: Sequelize.TEXT,
-                allowNull: true,
+                unique: true,
             },
             createdAt: {
                 type: Sequelize.DATE,
                 allowNull: false,
                 defaultValue: Sequelize.NOW,
-            }
+            },
         }, { // 테이블 자체 설정
             sequelize,
             timestamps: false,
             underscored: false,
-            modelName: 'User',
-            tableName: 'users',
+            modelName: 'Driver',
+            tableName: 'drivers',
             paranoid: true,
             charset: 'utf8',
             collate: 'utf8_general_ci',
@@ -43,8 +46,8 @@ module.exports = class User extends Sequelize.Model {
     }
 
     static associate(db) {
-        db.User.hasOne(db.Run, {
-            foreignKey: 'userId',
+        db.Driver.hasOne(db.Run, {
+            foreignKey: 'driverId',
             sourceKey: 'id'
         });
     }
