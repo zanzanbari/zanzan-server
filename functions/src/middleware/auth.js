@@ -18,7 +18,7 @@ const authUtil = {
             if (accesstokenDecode.id === undefined) return res.status(401).send(util.fail(401, '토큰이 유효하지 않습니다.'));
 
             const userId = accesstokenDecode.id;
-            const user = await User.findOne({ where : { userId } });
+            const user = await User.findOne({ where : { id: userId } });
             req.user = user;
             next();
         } catch (error) {
