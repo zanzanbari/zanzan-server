@@ -18,4 +18,21 @@ module.exports = {
             return res.status(500).send(util.fail(500, '서버 내 오류'));
         }
     },
+    getCallTaxi: async (req, res) => { //userId 받아야함
+        const {
+            body: {
+                origin, 
+                dest,
+                carType
+            },
+        } = req;
+
+        try {
+            const data = await vehiclesService.getCallTaxi(origin, dest, carType);
+            return res.status(200).send(util.success(200, '호출하기 성공', data));
+        } catch (error) {
+            console.log(error);
+            return res.status(500).send(util.fail(500, '서버 내 오류'));
+        }
+    },
 };

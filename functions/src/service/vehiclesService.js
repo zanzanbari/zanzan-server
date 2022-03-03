@@ -1,4 +1,6 @@
 const _ = require('lodash');
+const Driver = require('../models/drivers');
+const Run = require('../models/runs');
 const { findDirectionAPI } = require("../module/api");
 const { keysToCamel } = require('../module/convertSnakeToCamel');
 
@@ -45,5 +47,34 @@ module.exports = {
             return -1;
         }
     },
+
+    getCallTaxi: async (origin, destination, carType) => { //userId전달받아야함
+        try { 
+            //차종 일치, 10분 이내에 있는 기사들 중 랜덤으로 골라야함
+            //const cars = await Driver.findAll({ where: { carType } });
+            //console.log(cars)
+            const driver = await Driver.findOne({ where: { carType } }); //일단 하나만뽑자
+            // await Run.create({
+            //     userId: 18,
+            //     driverId: driver.id,
+            // });
+            // const runs = await Run.findAll();
+
+            const { name, photo, carName, carNumber, location } = driver;
+            const locationJoin = location.join(',');
+            const { routesData } = await findDirectionAPI(locationJoin,origin);
+            return {
+                name, photo, carName, carNumber, location: locationJoin, 
+                estimatedTime: routesData.duration,
+                routes: {
+                    bound: keysToCamel(routesData.bound),
+                    roads: keysToCamel(routesData.roads),
+                },
+            }
+        } catch (error) {
+            console.log(error);
+            return -1;
+        }
+    }
 
 }
