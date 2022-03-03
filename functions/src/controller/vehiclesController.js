@@ -12,6 +12,9 @@ module.exports = {
 
         try {
             const data = await vehiclesService.getDirections(origin, destination);
+            if(data == -1){
+                return res.status(400).send(util.fail(400, '경로를 찾을 수 없습니다.'));
+            }
             return res.status(200).send(util.success(200, '길찾기 성공', data));
         } catch (error) {
             console.log(error);
@@ -21,14 +24,20 @@ module.exports = {
     getCallTaxi: async (req, res) => { //userId 받아야함
         const {
             body: {
-                origin, 
-                dest,
+                origin,
                 carType
             },
         } = req;
 
         try {
-            const data = await vehiclesService.getCallTaxi(origin, dest, carType);
+            const data = await vehiclesService.getCallTaxi(origin, carType);
+            if(data == -1){
+                return res.status(400).send(util.fail(400, '경로를 찾을 수 없습니다.'));
+            }else if(data == -2){
+                return res.status(400).send(util.fail(400, `${carType}이 근처에 없습니다.`));
+            }else if(data == -3){
+                return res.status(400).send(util.fail(400, '10분 이내의 차량을 찾을 수 없습니다.'));
+            }
             return res.status(200).send(util.success(200, '호출하기 성공', data));
         } catch (error) {
             console.log(error);

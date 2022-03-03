@@ -48,17 +48,30 @@ module.exports = {
         }
     },
 
-    getCallTaxi: async (origin, destination, carType) => { //userId전달받아야함
+    getCallTaxi: async (origin, carType) => { //userId전달받아야함
         try { 
             //차종 일치, 10분 이내에 있는 기사들 중 랜덤으로 골라야함
-            //const cars = await Driver.findAll({ where: { carType } });
-            //console.log(cars)
-            const driver = await Driver.findOne({ where: { carType } }); //일단 하나만뽑자
-            // await Run.create({
-            //     userId: 18,
-            //     driverId: driver.id,
-            // });
-            // const runs = await Run.findAll();
+            const drivers = [];
+            const cars = await Driver.findAll({ where: { carType } });
+            if(!cars.length){ //해당 차종 없음
+                return -2;
+            }
+            for(let o of cars){
+                const locationJoin = o.location.join(',');
+                const { routesData } = await findDirectionAPI(locationJoin,origin);
+                if(routesData.duration <= 600){ //10분 이내
+                    drivers.push(o.id);
+                }
+            }
+            if(!drivers.length){//10분 이내의 기사 없음
+                return -3;
+            }
+            const randomId = drivers[Math.floor(Math.random()*drivers.length)];
+            const driver = await Driver.findOne({ where: { id: randomId } });
+            await Run.create({
+                userId: 18,
+                driverId: driver.id,
+            });
 
             const { name, photo, carName, carNumber, location } = driver;
             const locationJoin = location.join(',');
