@@ -27,10 +27,13 @@ module.exports = {
                 origin,
                 carType
             },
+            user: {
+                id: userId
+            }
         } = req;
 
         try {
-            const data = await vehiclesService.getCallTaxi(origin, carType);
+            const data = await vehiclesService.getCallTaxi(origin, carType, userId);
             if(data == -1){
                 return res.status(400).send(util.fail(400, '경로를 찾을 수 없습니다.'));
             }else if(data == -2){

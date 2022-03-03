@@ -48,7 +48,7 @@ module.exports = {
         }
     },
 
-    getCallTaxi: async (origin, carType) => { //userId전달받아야함
+    getCallTaxi: async (origin, carType, userId) => { //userId전달받아야함
         try { 
             //차종 일치, 10분 이내에 있는 기사들 중 랜덤으로 골라야함
             const drivers = [];
@@ -69,7 +69,7 @@ module.exports = {
             const randomId = drivers[Math.floor(Math.random()*drivers.length)];
             const driver = await Driver.findOne({ where: { id: randomId } });
             await Run.create({
-                userId: 18,
+                userId,
                 driverId: driver.id,
             });
 
